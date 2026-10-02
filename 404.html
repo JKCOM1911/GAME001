@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - ไม่พบหน้านี้ | Chrome Dino</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦖</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(circle at 50% 50%, #1e1b4b 0%, #030712 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #e2e8f0;
+            font-family: 'Outfit', sans-serif;
+            text-align: center;
+        }
+        .container {
+            background: rgba(22, 30, 49, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            margin: 20px;
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
+        }
+        .dino-icon {
+            font-size: 64px;
+            margin-bottom: 10px;
+            display: inline-block;
+            animation: bounce 1.5s infinite;
+        }
+        h1 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 28px;
+            color: #00f0ff;
+            margin-bottom: 15px;
+        }
+        p {
+            color: #94a3b8;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+        .btn {
+            display: inline-block;
+            background: #6366f1;
+            color: white;
+            text-decoration: none;
+            padding: 12px 28px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 15px;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+            transition: transform 0.2s, background 0.2s;
+        }
+        .btn:hover {
+            background: #4f46e5;
+            transform: translateY(-2px);
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="dino-icon">🦖</div>
+        <h1>404</h1>
+        <p>ไม่พบหน้าที่คุณกำลังค้นหา ไดโนเสาร์ตัวนี้วิ่งหลงทางแล้ว!</p>
+        <a href="index.html" class="btn">🎮 กลับไปหน้าเล่นเกม</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦖</text></svg>">
+    <title>T-Rex Game: Jump & Duck</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f7f7f7;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        h1 { color: #535353; margin-bottom: 5px; }
+        p { color: #777; margin-top: 0; font-size: 14px; }
+
+        #gameSpace {
+            width: 600px;
+            height: 200px;
+            border-bottom: 2px solid #535353;
+            position: relative;
+            overflow: hidden;
+            background-color: #fff;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        /* ตัวไดโนเสาร์ T-Rex */
+        #dino {
+            width: 40px;
+            height: 48px;
+            background-color: transparent;
+            position: absolute;
+            bottom: 0;
+            left: 50px;
+            transition: height 0.1s, bottom 0.1s;
+        }
+
+        /* สถานะหมอบ (Duck) */
+        #dino.duck {
+            width: 56px;
+            height: 32px;
+            background-color: transparent;
+        }
+
+        /* แอนิเมชันกระโดด (เพิ่มเวลาเป็น 0.8s เพื่อลดความเร็วกระโดดและเพิ่มความนุ่มนวล) */
+        .jump {
+            animation: jumpAnimation 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        /* สิ่งกีดขวาง */
+        .obstacle {
+            position: absolute;
+            bottom: 0;
+            left: 600px;
+        }
+
+        /* ต้นกระบองเพชร */
+        .cactus {
+            width: 24px;
+            height: 40px;
+            background-color: transparent;
+        }
+
+        /* นก (ต้องหมอบหลบ) */
+        .bird {
+            width: 36px;
+            height: 30px;
+            background-color: transparent;
+            bottom: 30px; /* บินสูงจากพื้น */
+        }
+
+        /* เคลื่อนที่สิ่งกีดขวาง (ลดความเร็วลงจาก 1.5s เป็น 2.2s และเอา infinite ออกเพื่อเพิ่มระยะห่างแบบสุ่ม) */
+        .move-animation {
+            animation: moveLeft 2.2s linear;
+        }
+
+        /* หน้าจอ Game Over */
+        #gameOverText {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #535353;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        #restartBtn {
+            font-size: 14px;
+            padding: 8px 16px;
+            cursor: pointer;
+            background-color: #535353;
+            color: white;
+            border: 2px solid #535353;
+            border-radius: 4px;
+            font-family: Arial, sans-serif;
+            margin-top: 10px;
+            transition: all 0.2s ease-in-out;
+            font-weight: bold;
+        }
+
+        #restartBtn:hover {
+            background-color: white;
+            color: #535353;
+        }
+
+        #scoreBoard {
+            margin-top: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #535353;
+        }
+
+        /* แอนิเมชันกระโดดที่มีฟิสิกส์แรงโน้มถ่วงจำลอง (ลอยตัวช้าๆ ที่จุดสูงสุด และลงพื้นเร็วขึ้น) */
+        @keyframes jumpAnimation {
+            0% { 
+                bottom: 0; 
+                animation-timing-function: ease-out;
+            }
+            50% { 
+                bottom: 125px; /* เพิ่มความสูงการกระโดดเล็กน้อย */
+                animation-timing-function: ease-in;
+            }
+            100% { 
+                bottom: 0; 
+            }
+        }
+
+        @keyframes moveLeft {
+            0% { left: 600px; }
+            100% { left: -40px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div style="margin-bottom: 15px;">
+        <a href="index.php" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; background: #6366f1; color: white; border-radius: 8px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4); transition: transform 0.15s ease;">
+            🦖 กลับไปหน้า Arcade Mode (หน้าหลัก)
+        </a>
+    </div>
+
+    <h1>T-Rex Dinosaur</h1>
+    <p>วิธีเล่น: Spacebar หรือ ⬆️ = กระโดด | ⬇️ = หมอบหลบนก</p>
+
+    <div id="gameSpace">
+        <div id="dino"></div>
+        <div id="obstacle" class="obstacle cactus move-animation"></div>
+        <div id="gameOverText">
+            GAME OVER<br>
+            <span style="font-size: 14px; color: #888; display: block; margin-bottom: 10px; margin-top: 5px;">กด Spacebar เพื่อเริ่มใหม่</span>
+            <button id="restartBtn">เริ่มเกมใหม่</button>
+        </div>
+    </div>
+    <div id="scoreBoard">Score: <span id="score">0</span></div>
+
+    <script>
+        const dino = document.getElementById("dino");
+        const obstacle = document.getElementById("obstacle");
+        const scoreDisplay = document.getElementById("score");
+        const gameOverText = document.getElementById("gameOverText");
+
+        // Pixel Art Maps for Retro Sprites
+        const DINO_STAND_MAP = [
+            "............XXXXXX..",
+            "............XXXXXXXX",
+            "............XXXOXXXX",
+            "............XXXXXXXX",
+            "............XXXX....",
+            "............XXXXXX..",
+            "X..........XXXXX....",
+            "X.........XXXXXX....",
+            "XX.......XXXXXXX....",
+            "XXX.....XXXXXXXX....",
+            "XXXX...XXXXXXXXX....",
+            "XXXXXXXXXXXXXXX.....",
+            ".XXXXXXXXXXXXXX.....",
+            "..XXXXXXXXXXXX......",
+            "...XXXXXXXXXX.......",
+            "....XXXXXXXX........",
+            ".....XXXXXX.........",
+            "......XXXX..........",
+            "......XX.XX.........",
+            "......X...X.........",
+            "......X...X.........",
+            "......XX..XX........",
+            "......X....X........",
+            "......XX...XX......."
+        ];
+
+        const DINO_RUN1_MAP = [
+            "............XXXXXX..",
+            "............XXXXXXXX",
+            "............XXXOXXXX",
+            "............XXXXXXXX",
+            "............XXXX....",
+            "............XXXXXX..",
+            "X..........XXXXX....",
+            "X.........XXXXXX....",
+            "XX.......XXXXXXX....",
+            "XXX.....XXXXXXXX....",
+            "XXXX...XXXXXXXXX....",
+            "XXXXXXXXXXXXXXX.....",
+            ".XXXXXXXXXXXXXX.....",
+            "..XXXXXXXXXXXX......",
+            "...XXXXXXXXXX.......",
+            "....XXXXXXXX........",
+            ".....XXXXXX.........",
+            "......XXXX..........",
+            "......XX.XX.........",
+            "......X...X.........",
+            "......XX..X.........",
+            ".......X............",
+            ".......XX...........",
+            "........X..........."
+        ];
+
+        const DINO_RUN2_MAP = [
+            "............XXXXXX..",
+            "............XXXXXXXX",
+            "............XXXOXXXX",
+            "............XXXXXXXX",
+            "............XXXX....",
+            "............XXXXXX..",
+            "X..........XXXXX....",
+            "X.........XXXXXX....",
+            "XX.......XXXXXXX....",
+            "XXX.....XXXXXXXX....",
+            "XXXX...XXXXXXXXX....",
+            "XXXXXXXXXXXXXXX.....",
+            ".XXXXXXXXXXXXXX.....",
+            "..XXXXXXXXXXXX......",
+            "...XXXXXXXXXX.......",
+            "....XXXXXXXX........",
+            ".....XXXXXX.........",
+            "......XXXX..........",
+            "......XX.XX.........",
+            "......X...X.........",
+            "......X..XX.........",
+            "..........X.........",
+            ".........XX.........",
+            ".........X.........."
+        ];
+
+        const DINO_DUCK1_MAP = [
+            "...........XXXXXXXXXXXXXX...",
+            "...........XXXXXXX...XXXXXX..",
+            "...........XXXXXXXXXOXXXXX..",
+            "...........XXXXXXXXXXXXXXXX.",
+            "...........XXXXXX...........",
+            "...........XXXXXXXXX........",
+            "X.........XXXXXXXXXX........",
+            "XX.......XXXXXXXXXXX........",
+            "XXX.....XXXXXXXXXXXX........",
+            "XXXXXXXXXXXXXXXXXXXX........",
+            ".XXXXXXXXXXXXXXXXXX.........",
+            "..XXXXXXXXXXXXXXXX..........",
+            "...XXXXXXXXXXXXXX...........",
+            "....XXXXXX..XXXX............",
+            "....XX.XX...XX.X............",
+            "....XX......XX.............."
+        ];
+
+        const DINO_DUCK2_MAP = [
+            "...........XXXXXXXXXXXXXX...",
+            "...........XXXXXXXXX...XXX..",
+            "...........XXXXXXXXXOXXXXX..",
+            "...........XXXXXXXXXXXXXXXX.",
+            "...........XXXXXX...........",
+            "...........XXXXXXXXX........",
+            "X.........XXXXXXXXXX........",
+            "XX.......XXXXXXXXXXX........",
+            "XXX.....XXXXXXXXXXXX........",
+            "XXXXXXXXXXXXXXXXXXXX........",
+            ".XXXXXXXXXXXXXXXXXX.........",
+            "..XXXXXXXXXXXXXXXX..........",
+            "...XXXXXXXXXXXXXX...........",
+            "....XXXXXX..XXXX............",
+            "....XX.XX...X.XX............",
+            ".....XX......XX............."
+        ];
+
+        const DINO_DEAD_MAP = [
+            "............XXXXXX..",
+            "............XXXXXXXX",
+            "............XX.X.XXX",
+            "............X.X.X.XX",
+            "............XX.X.XXX",
+            "............XXXX....",
+            "............XXXXXX..",
+            "X..........XXXXX....",
+            "X.........XXXXXX....",
+            "XX.......XXXXXXX....",
+            "XXX.....XXXXXXXX....",
+            "XXXX...XXXXXXXXX....",
+            "XXXXXXXXXXXXXXX.....",
+            ".XXXXXXXXXXXXXX.....",
+            "..XXXXXXXXXXXX......",
+            "...XXXXXXXXXX.......",
+            "....XXXXXXXX........",
+            ".....XXXXXX.........",
+            "......XXXX..........",
+            "......XX.XX.........",
+            "......X...X.........",
+            "......X...X.........",
+            "......XX..XX........",
+            "......X....X........",
+            "......XX...XX......."
+        ];
+
+        const CACTUS_MAP = [
+            "....XX......",
+            "....XX......",
+            "....XX......",
+            ".XX.XX......",
+            "XXX.XX.XX...",
+            "XXX.XX.XXX..",
+            "XXX.XX.XXX..",
+            "XXX.XX.XXX..",
+            "XX..XX.XXX..",
+            "....XXXXX...",
+            "....XXXX....",
+            "....XX......",
+            "....XX......",
+            "....XX......",
+            "....XX......",
+            "....XX......",
+            "....XX......",
+            "....XX......",
+            "....XX......",
+            "....XX......"
+        ];
+
+        const BIRD_UP_MAP = [
+            "......XXXX..............",
+            "......XXXXXX............",
+            "......XXXXXXX...........",
+            ".......XXXXXX...........",
+            "........XXXXX.XX........",
+            "..........XXXXXXX.......",
+            "..XX.....XXXXXXXXXX.....",
+            "XXXXX...XXXXXXXXXXXX....",
+            "XXXXXX.XXXXXXXXXXXXXX...",
+            "XXXXXXXXXXXXXXXXXXXXXX..",
+            ".XXXXXXXXXXXXXXXXXXXX...",
+            "..XXXXXXXXXXXXXXXXXX....",
+            "....XXXXXXXXX.XXXX......",
+            "......XXXXX.............",
+            "......XXXXX.............",
+            "......XX.XX.............",
+            "......X...X.............",
+            "......X.................",
+            "......XX................",
+            "........................"
+        ];
+
+        const BIRD_DOWN_MAP = [
+            "......XXXX..............",
+            "......XXXXXX............",
+            "......XXXXXXX...........",
+            ".......XXXXXX...........",
+            "........XXXXX.XX........",
+            "..........XXXXXXX.......",
+            "..XX.....XXXXXXXXXX.....",
+            "XXXXX...XXXXXXXXXXXX....",
+            "XXXXXX.XXXXXXXXXXXXXX...",
+            "XXXXXXXXXXXXXXXXXXXXXX..",
+            ".XXXXXXXXXXXXXXXXXXXX...",
+            "..XXXXXXXXXXXXXXXXXX....",
+            "....XXXXXXXXX.XXXX......",
+            "......XXXXX.............",
+            "......XXXXX.............",
+            "......XX.XX.............",
+            "......X...X.............",
+            "......X...XX............",
+            "......XX..X.............",
+            "......XX.XX............."
+        ];
+
+        // Helper to convert pixel maps into inline SVG Base64 strings
+        function mapToSvgUri(map, color) {
+            const rows = map.length;
+            const cols = map[0].length;
+            let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${cols} ${rows}" shape-rendering="crispEdges">`;
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const char = map[r][c];
+                    if (char === 'X') {
+                        svg += `<rect x="${c}" y="${r}" width="1" height="1" fill="${encodeURIComponent(color)}"/>`;
+                    } else if (char === 'O') {
+                        svg += `<rect x="${c}" y="${r}" width="1" height="1" fill="#fff"/>`;
+                    }
+                }
+            }
+            svg += `</svg>`;
+            return 'data:image/svg+xml;base64,' + btoa(svg);
+        }
+
+        const DINO_STAND_SVG = mapToSvgUri(DINO_STAND_MAP, "#535353");
+        const DINO_RUN1_SVG = mapToSvgUri(DINO_RUN1_MAP, "#535353");
+        const DINO_RUN2_SVG = mapToSvgUri(DINO_RUN2_MAP, "#535353");
+        const DINO_DUCK1_SVG = mapToSvgUri(DINO_DUCK1_MAP, "#535353");
+        const DINO_DUCK2_SVG = mapToSvgUri(DINO_DUCK2_MAP, "#535353");
+        const DINO_DEAD_SVG = mapToSvgUri(DINO_DEAD_MAP, "#d9534f");
+        const CACTUS_SVG = mapToSvgUri(CACTUS_MAP, "#5cb85c");
+        const BIRD_UP_SVG = mapToSvgUri(BIRD_UP_MAP, "#d9534f");
+        const BIRD_DOWN_SVG = mapToSvgUri(BIRD_DOWN_MAP, "#d9534f");
+
+        let score = 0;
+        let isAlive = true;
+        let isDucking = false;
+        let frameCount = 0;
+
+        // ควบคุมการกดปุ่ม
+        document.addEventListener("keydown", function (event) {
+            if (!isAlive && (event.code === "Space" || event.code === "ArrowUp")) {
+                resetGame();
+                return;
+            }
+
+            if ((event.code === "Space" || event.code === "ArrowUp") && !isDucking) {
+                jump();
+            }
+            
+            if (event.code === "ArrowDown" && !dino.classList.contains("jump")) {
+                duck(true);
+            }
+        });
+
+        document.addEventListener("keyup", function (event) {
+            if (event.code === "ArrowDown") {
+                duck(false);
+            }
+        });
+
+        function jump() {
+            if (!dino.classList.contains("jump") && isAlive) {
+                dino.classList.add("jump");
+                setTimeout(() => dino.classList.remove("jump"), 800); // แมตช์กับเวลาแอนิเมชัน 0.8s
+            }
+        }
+
+        function duck(status) {
+            if (status && isAlive) {
+                dino.classList.add("duck");
+                isDucking = true;
+            } else {
+                dino.classList.remove("duck");
+                isDucking = false;
+            }
+        }
+
+        // เมื่อสิ่งกีดขวางวิ่งพ้นหน้าจอไป (สิ้นสุดแอนิเมชัน)
+        obstacle.addEventListener('animationend', () => {
+            if (!isAlive) return;
+            
+            // นำ class แอนิเมชันออกก่อนเพื่อเริ่มรอบใหม่
+            obstacle.classList.remove("move-animation");
+            
+            // สุ่มระยะหน่วงเวลาก่อนเกิดตัวถัดไป (เช่น 600ms ถึง 1400ms) เพื่อป้องกันการเกิดชิดกันเกินไป
+            const spawnDelay = 600 + Math.random() * 800;
+            
+            setTimeout(() => {
+                if (!isAlive) return;
+                
+                // สุ่ม 0 หรือ 1 เพื่อเลือกสิ่งกีดขวาง
+                let type = Math.floor(Math.random() * 2); 
+                if (type === 0) {
+                    obstacle.className = "obstacle cactus move-animation";
+                } else {
+                    obstacle.className = "obstacle bird move-animation";
+                }
+            }, spawnDelay);
+        });
+
+        function updateDinoSprite() {
+            if (!isAlive) {
+                setDinoSprite(DINO_DEAD_SVG);
+            } else if (dino.classList.contains("jump")) {
+                setDinoSprite(DINO_STAND_SVG);
+            } else if (isDucking) {
+                const sprite = (Math.floor(frameCount / 10) % 2 === 0) ? DINO_DUCK1_SVG : DINO_DUCK2_SVG;
+                setDinoSprite(sprite);
+            } else {
+                const sprite = (Math.floor(frameCount / 10) % 2 === 0) ? DINO_RUN1_SVG : DINO_RUN2_SVG;
+                setDinoSprite(sprite);
+            }
+        }
+
+        function setDinoSprite(svgUri) {
+            dino.style.backgroundImage = `url(${svgUri})`;
+            dino.style.backgroundSize = "contain";
+            dino.style.backgroundRepeat = "no-repeat";
+            dino.style.backgroundPosition = "bottom";
+        }
+
+        function updateObstacleSprite() {
+            if (obstacle.classList.contains("cactus")) {
+                setObstacleSprite(CACTUS_SVG);
+            } else if (obstacle.classList.contains("bird")) {
+                const sprite = (Math.floor(frameCount / 12) % 2 === 0) ? BIRD_UP_SVG : BIRD_DOWN_SVG;
+                setObstacleSprite(sprite);
+            }
+        }
+
+        function setObstacleSprite(svgUri) {
+            obstacle.style.backgroundImage = `url(${svgUri})`;
+            obstacle.style.backgroundSize = "contain";
+            obstacle.style.backgroundRepeat = "no-repeat";
+            obstacle.style.backgroundPosition = "bottom";
+        }
+
+        // ตรวจสอบการชน
+        let checkCollision = setInterval(function () {
+            frameCount++;
+            updateDinoSprite();
+            updateObstacleSprite();
+
+            if (!isAlive) return;
+
+            let dinoBottom = parseInt(window.getComputedStyle(dino).getPropertyValue("bottom"));
+            let dinoHeight = parseInt(window.getComputedStyle(dino).getPropertyValue("height"));
+            let dinoTop = dinoBottom + dinoHeight;
+            let dinoWidth = parseInt(window.getComputedStyle(dino).getPropertyValue("width"));
+
+            let obsLeft = parseInt(window.getComputedStyle(obstacle).getPropertyValue("left"));
+            let obsBottom = parseInt(window.getComputedStyle(obstacle).getPropertyValue("bottom"));
+            let obsHeight = parseInt(window.getComputedStyle(obstacle).getPropertyValue("height"));
+            let obsTop = obsBottom + obsHeight;
+
+            // ตรวจสอบว่าสิ่งกีดขวางอยู่ในระยะประชิดตัวไดโนเสาร์ (แกน X ชนกัน)
+            if (obsLeft > 50 && obsLeft < (50 + dinoWidth)) {
+                let isCollision = false;
+
+                if (obstacle.classList.contains("bird")) {
+                    // ถ้านก: ต้องหมอบเท่านั้น (isDucking) ถึงจะไม่ชน, ถ้ากระโดด (jump) หรือยืนเฉยๆ จะชนนกทันที
+                    if (!isDucking) {
+                        isCollision = true;
+                    }
+                } else {
+                    // ถ้ากระบองเพชร: เช็คแกน Y ตามปกติ (ต้องกระโดดข้าม)
+                    if (!(dinoBottom > obsTop || dinoTop < obsBottom)) {
+                        isCollision = true;
+                    }
+                }
+
+                if (isCollision) {
+                    // เกมโอเวอร์
+                    obstacle.classList.remove("move-animation");
+                    obstacle.style.left = `${obsLeft}px`;
+                    gameOverText.style.display = "block";
+                    isAlive = false;
+                    dino.classList.remove("duck");
+                }
+            } else if (obstacle.classList.contains("move-animation")) {
+                // เพิ่มคะแนนเฉพาะเวลาสิ่งกีดขวางกำลังวิ่งอยู่เท่านั้น
+                score++;
+                scoreDisplay.innerText = Math.floor(score / 15);
+            }
+        }, 10);
+
+        function resetGame() {
+            isAlive = true;
+            score = 0;
+            scoreDisplay.innerText = "0";
+            gameOverText.style.display = "none";
+            obstacle.style.left = ""; // ล้างค่า inline style เพื่อให้สิ่งกีดขวางกลับไปอยู่ที่ left: 600px ตาม CSS
+            obstacle.className = "obstacle cactus";
+            
+            // รอสักครู่ก่อนจะส่งสิ่งกีดขวางแรกออกมา
+            setTimeout(() => {
+                if (isAlive) obstacle.classList.add("move-animation");
+            }, 400);
+        }
+
+        gameOverText.addEventListener("click", resetGame);
+
+        const restartBtn = document.getElementById("restartBtn");
+        restartBtn.addEventListener("click", function(event) {
+            event.stopPropagation();
+            resetGame();
+        });
+    </script>
+</body>
+</html>
